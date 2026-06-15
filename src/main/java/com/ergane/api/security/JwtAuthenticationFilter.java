@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -41,11 +42,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             try {
-                String userId = jwtService.getUserId(token);
+                // Valida a assinatura e parseia o token uma única vez por requisição.
+                Claims claims = jwtService.parseClaims(token);
                 UserPrincipal principal = UserPrincipal.builder()
-                        .userId(userId)
-                        .cpf((String) jwtService.parseClaims(token).get("cpf"))
-                        .nome((String) jwtService.parseClaims(token).get("nome"))
+                        .userId(claims.getSubject())
+                        .cpf((String) claims.get("cpf"))
+                        .nome((String) claims.get("nome"))
                         .build();
 
                 var authentication = new UsernamePasswordAuthenticationToken(
