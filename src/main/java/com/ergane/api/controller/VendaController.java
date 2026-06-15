@@ -1,6 +1,7 @@
 package com.ergane.api.controller;
 
 import com.ergane.api.dto.response.DashboardResponse;
+import com.ergane.api.dto.response.VendaDetalheResponse;
 import com.ergane.api.dto.response.VendaRecenteResponse;
 import com.ergane.api.dto.request.VendaRequest;
 import com.ergane.api.dto.response.VendaResponse;
@@ -33,6 +34,13 @@ public class VendaController {
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
         return ResponseEntity.ok(vendaService.recentSales(principal.getUserId()));
+    }
+
+    @GetMapping("/vendas/{id}")
+    public ResponseEntity<VendaDetalheResponse> detalhe(Authentication authentication, @PathVariable String id) {
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+        return ResponseEntity.ok(vendaService.detail(principal.getUserId(), id));
     }
 
     @PostMapping("/vendas")

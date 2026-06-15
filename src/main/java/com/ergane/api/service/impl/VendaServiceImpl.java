@@ -1,6 +1,7 @@
 package com.ergane.api.service.impl;
 
 import com.ergane.api.dto.response.DashboardResponse;
+import com.ergane.api.dto.response.VendaDetalheResponse;
 import com.ergane.api.dto.response.VendaRecenteResponse;
 import com.ergane.api.dto.request.SaleItemRequest;
 import com.ergane.api.dto.request.VendaRequest;
@@ -108,6 +109,37 @@ public class VendaServiceImpl implements VendaService {
                 return VendaResponse.builder()
                                 .id(saved.getId())
                                 .mensagem("Venda registrada com sucesso e estoque atualizado.")
+                                .build();
+        }
+
+        @Override
+        public VendaDetalheResponse detail(String userId, String id) {
+                Venda venda = vendaRepository.findByIdAndUsuarioId(id, userId)
+                                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Venda não encontrada."));
+
+                List<VendaDetalheResponse.Item> itens = venda.getItens() == null ? List.of()
+                                : venda.getItens().stream()
+                                                .map(item -> VendaDetalheResponse.Item.builder()
+                                                                .produtoId(item.getProdutoId())
+                                                                .nome(item.getNome())
+                                                                .quantidade(item.getQuantidade())
+                                                                .precoUnitario(item.getPrecoUnitario())
+                                                                .precoTotal(item.getPrecoTotal())
+                                                                .build())
+                                                .toList();
+
+                return VendaDetalheResponse.builder()
+                                .id(venda.getId())
+                                .nomeCliente(venda.getNomeCliente())
+                                .cpfCliente(venda.getCpfCliente())
+                                .metodoPagamento(venda.getMetodoPagamento())
+                                .valorTotal(venda.getValorTotal())
+                                .valorRecebido(venda.getValorRecebido())
+                                .troco(venda.getTroco())
+                                .latitude(venda.getLatitude())
+                                .longitude(venda.getLongitude())
+                                .dataHora(venda.getDataHora())
+                                .itens(itens)
                                 .build();
         }
 
