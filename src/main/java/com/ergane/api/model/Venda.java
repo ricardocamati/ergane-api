@@ -31,7 +31,8 @@ public class Venda {
     private BigDecimal troco;
     private Double latitude;
     private Double longitude;
-    private List<Produto> itens;
-    private LocalDateTime dataHora;
 
+    private List<ItemVenda> itens;
+
+    private LocalDateTime dataHora;
 }
