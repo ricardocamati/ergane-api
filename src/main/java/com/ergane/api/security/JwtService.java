@@ -36,12 +36,13 @@ public class JwtService {
         } catch (Exception ex) {
             keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }
+        // HS256 exige pelo menos 256 bits. Em vez de "esticar" um segredo curto
+        // repetindo bytes (o que não adiciona entropia), falhamos na inicialização
+        // para forçar a configuração de um segredo forte.
         if (keyBytes.length < 32) {
-            byte[] expanded = new byte[32];
-            for (int i = 0; i < expanded.length; i++) {
-                expanded[i] = keyBytes[i % keyBytes.length];
-            }
-            keyBytes = expanded;
+            throw new IllegalStateException(
+                    "security.jwt.secret deve ter no mínimo 32 bytes (256 bits). "
+                            + "Configure um segredo aleatório forte via variável de ambiente JWT_SECRET.");
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }

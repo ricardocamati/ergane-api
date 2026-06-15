@@ -2,12 +2,16 @@ package com.ergane.api;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -24,12 +28,17 @@ public class ErganeApiApplication {
     }
 
     @Bean
-    public CommandLineRunner inicializarDados(Environment env, UsuarioRepository usuarioRepository) {
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CommandLineRunner inicializarDados(Environment env, UsuarioRepository usuarioRepository,
+            BCryptPasswordEncoder encoder) {
         return args -> {
             System.out.println("\n🚀 API do Ergane inicializada com sucesso!");
 
             if (usuarioRepository.count() == 0) {
-                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
                 Usuario admin = Usuario.builder()
                         .nome("Vendedor Teste")
                         .cpf("12345678900")
@@ -42,11 +51,21 @@ public class ErganeApiApplication {
         };
     }
 
+    // Habilita transações no MongoDB para que a baixa de estoque + registro da venda
+    // sejam atômicos (exige um cluster em replica set, como o MongoDB Atlas).
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
+        return new MongoTransactionManager(dbFactory);
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins:http://localhost:8081}") List<String> allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // ← mudança aqui
-        configuration.setAllowCredentials(true);                     // ← e aqui
+        // Origens explícitas em vez de "*". A autenticação é via Bearer token,
+        // então não habilitamos credenciais (cookies) — evita wildcard + credentials.
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowCredentials(false);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
 
